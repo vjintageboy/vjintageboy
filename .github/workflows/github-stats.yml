@@ -1,0 +1,47 @@
+name: Generate GitHub Stats SVG
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"   # chạy mỗi 12 giờ (tùy chỉnh)
+  workflow_dispatch:         # cho phép chạy thủ công
+
+permissions:
+  contents: write            # cho phép commit file SVG vào repo
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate overview.svg & languages.svg
+        uses: TBXark/github-status@v1
+        with:
+          # Bắt buộc
+          OWNER: vjintageboy
+          REPO: vjintageboy
+
+          # Tuỳ chọn – tuỳ biến output/thư mục
+          OUT_DIR: generated
+          # Lọc ngôn ngữ/repo nếu muốn
+          EXCLUDE_REPO: ""
+          EXCLUDE_LANG: ""
+          # Theme (dark/light/custom) – có thể thử: "dark", "tokyonight", "solarized_dark"...
+          THEME: dark
+
+          # Hiển thị gì trong overview (tuỳ action hỗ trợ)
+          SHOW_TOTAL_STARS: true
+          SHOW_COMMIT: true
+          SHOW_PR: true
+          SHOW_ISSUE: true
+          SHOW_FOLLOWERS: true
+          SHOW_REPO: true
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add generated/*.svg
+          git commit -m "chore: update stats svg" || echo "No changes to commit"
+          git push
