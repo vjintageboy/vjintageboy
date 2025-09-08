@@ -2,7 +2,7 @@ name: Generate Stats Images
 
 on:
   schedule:
-    - cron: "0 0 * * *"    # chạy mỗi ngày 00:00 UTC
+    - cron: "0 0 * * *"   # chạy mỗi ngày 00:00 UTC
   workflow_dispatch:
 
 permissions:
@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout your profile repo
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -20,44 +20,32 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      # Nếu repo CHƯA có requirements.txt & generate_images.py, dùng 2 bước sau để tải
-      - name: Fetch requirements & script (if not present)
+      - name: Clone jstrieb/github-stats
         run: |
-          if [ ! -f requirements.txt ]; then
-            curl -fsSL https://raw.githubusercontent.com/jstrieb/github-stats/refs/heads/master/requirements.txt -o requirements.txt
-          fi
-          if [ ! -f generate_images.py ]; then
-            curl -fsSL https://raw.githubusercontent.com/jstrieb/github-stats/refs/heads/master/generate_images.py -o generate_images.py
-          fi
+          git clone --depth=1 https://github.com/jstrieb/github-stats stats-src
 
       - name: Install requirements
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install -r requirements.txt
+          python -m pip install -r stats-src/requirements.txt
 
-      - name: Generate images
+      - name: Generate images with jstrieb/github-stats
+        working-directory: stats-src
+        env:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}   # PAT (khuyến nghị)
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # có sẵn
+          EXCLUDED: ${{ secrets.EXCLUDED }}           # tùy chọn: "repo1,repo2"
+          EXCLUDED_LANGS: ${{ secrets.EXCLUDED_LANGS }} # tùy chọn: "HTML,TeX"
         run: |
           python --version
           python generate_images.py
-        env:
-          # Nếu có PAT, đặt ở Settings → Secrets → Actions → ACCESS_TOKEN
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          EXCLUDED: ${{ secrets.EXCLUDED }}                 # ví dụ: "repo1,repo2"
-          EXCLUDED_LANGS: ${{ secrets.EXCLUDED_LANGS }}     # LƯU Ý: đồng bộ tên SECRET này
+          mkdir -p ../generated
+          cp -f generated/*.svg ../generated/
 
-      - name: Commit to the repo
+      - name: Commit SVGs to your repo
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add generated/*.svg || true
-          git commit -m 'Update generated files' || echo "No changes"
+          git commit -m "chore: update stats svg" || echo "No changes"
           git push
