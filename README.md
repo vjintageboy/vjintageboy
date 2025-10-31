@@ -6,9 +6,8 @@
   ![](https://komarev.com/ghpvc/?username=vjintageboy&color=blue)  
 </h1>
 <div align="center">
-<img src="https://media.giphy.com/media/836HiJc7pgzy8iNXCn/giphy.gif" width="300" />
+
 </div>
-<img src="https://github.com/sciencepal/sciencepal/blob/master/assets/life_balance.gif" alt="side Image" align="right" width="200" height="auto" />
 
 ***About me***
 
